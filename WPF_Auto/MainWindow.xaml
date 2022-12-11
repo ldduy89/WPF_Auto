@@ -12,7 +12,7 @@
             <ColumnDefinition Width="703*"/>
         </Grid.ColumnDefinitions>
         <StackPanel Grid.ColumnSpan="2">
-            <ListView Height="140" Margin="5" x:Name="lstChar" SelectionChanged="lstChar_SelectionChanged">
+            <ListView Height="140" Margin="5" x:Name="lstChar">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Width="28" >
@@ -23,7 +23,8 @@
                             </GridViewColumn.CellTemplate>
                             <CheckBox Click="CheckBox_Click"/>
                         </GridViewColumn>
-                        <GridViewColumn Header="Name" Width="200" DisplayMemberBinding="{Binding username}" ></GridViewColumn>
+                        <GridViewColumn Header="Name" Width="100" DisplayMemberBinding="{Binding username}" ></GridViewColumn>
+                        <GridViewColumn Header="Name" Width="100" DisplayMemberBinding="{Binding deviceName}" ></GridViewColumn>
                         <GridViewColumn Header="Status" Width="70" DisplayMemberBinding="{Binding status}" ></GridViewColumn>
                     </GridView>
                 </ListView.View>
