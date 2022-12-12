@@ -24,7 +24,7 @@
                             <CheckBox Click="CheckBox_Click"/>
                         </GridViewColumn>
                         <GridViewColumn Header="Name" Width="100" DisplayMemberBinding="{Binding username}" ></GridViewColumn>
-                        <GridViewColumn Header="Name" Width="100" DisplayMemberBinding="{Binding deviceName}" ></GridViewColumn>
+                        <GridViewColumn Header="Device" Width="100" DisplayMemberBinding="{Binding deviceName}" ></GridViewColumn>
                         <GridViewColumn Header="Status" Width="70" DisplayMemberBinding="{Binding status}" ></GridViewColumn>
                     </GridView>
                 </ListView.View>

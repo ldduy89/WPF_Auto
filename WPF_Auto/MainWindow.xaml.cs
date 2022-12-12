@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -34,6 +35,7 @@ namespace WPF_Auto
         #endregion
         List<Charater> chars = new List<Charater>();
         LDPlayer ldplayer = new LDPlayer();
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -116,24 +118,25 @@ namespace WPF_Auto
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
+            List<Charater> _charsChk = chars.FindAll(c => c.isChecked);
+            if (_charsChk.Count == 0) return;
             isStart = true;
             var devices = ldplayer.GetDevices();
-            ldplayer.Open("name", devices[0]);
-            ldplayer.Open("name", devices[1]);
-            ldplayer.Open("name", devices[2]);
-            ldplayer.Open("name", devices[3]);
-            //foreach (var driver in devices)
-            //{
-            //    ldplayer.Open("name", driver);
-            //}
+
+            int _count = _charsChk.Count > devices.Count ? devices.Count : _charsChk.Count;
+            for(int i = 0; i < _count; i++)
+            {
+                ldplayer.Open("name", devices[i]);
+            }
             foreach (Charater item in chars)
             {
                 if (item.isChecked)
                 {
-                    item.status = "waiting";
+                    item.status = "Wait";
                 }
             }
             CollectionViewSource.GetDefaultView(lstChar.ItemsSource).Refresh();
+            
             WaitRunDevices();
         }
 
@@ -141,29 +144,34 @@ namespace WPF_Auto
         {
             new Task(() =>
             {
+                //waitCPU();
                 while (isStart)
                 {
                     var devicesRuning = ldplayer.GetDevices2_Running();
+                    List<Charater> _charsDrop = chars.FindAll(c => c.deviceName != null && devicesRuning.Find(d => d.name == c.deviceName).name == null);
+                    List<Charater> _charsChk = chars.FindAll(c => c.isChecked);
+                    if (_charsChk.Count == 0) isStart = false;
+
+                    if (!isStart) return;
                     List<string> devices = new List<string>();
 
                     foreach (var device in devicesRuning)
                     {
                         Charater _char = chars.Find(c => c.deviceName == device.name);
-                        if (_char == null)
+                        if (_char == null && device.adb_id != "-1")
                         {
-                            Charater _charWaiting = chars.Find(c => c.isChecked && c.status == "waiting");
-                            if (_charWaiting != null)
+                            Charater _charwait = chars.Find(c => c.isChecked && c.status == "Wait");
+                            if (_charwait != null)
                             {
-                                _charWaiting.status = "playing";
-                                _charWaiting.deviceId = device.adb_id;
-                                _charWaiting.deviceName = device.name;
-                                Auto(_charWaiting);
+                                _charwait.status = "Running";
+                                _charwait.deviceId = device.adb_id;
+                                _charwait.deviceName = device.name;
+                                Auto(_charwait);
 
                             }
                         }
                     };
 
-                    List<Charater> _charsDrop = chars.FindAll(c => c.deviceName != null && devicesRuning.Find(d => d.name == c.deviceName).name == null);
                     if (_charsDrop.Count > 0)
                     {
                         foreach(Charater _char in _charsDrop)
@@ -183,7 +191,26 @@ namespace WPF_Auto
                 }
             }).Start();
         }
-        
+
+
+
+        public PerformanceCounter myCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
+
+        private void waitCPU()
+        {
+            var check = true;
+            while (check)
+            {
+                Delay(10);
+                ManagementObjectSearcher cpuSearch = new ManagementObjectSearcher(@"\root\CIMV2",
+                      "SELECT * FROM Win32_PerfFormattedData_PerfOS_Processor WHERE Name=\"_Total\"");
+                ManagementObjectCollection moc = cpuSearch.Get();
+                ManagementObject mo = moc.Cast<ManagementObject>().First();
+                string cpu = mo["PercentIdleTime"].ToString();
+                if (Int32.Parse(cpu) < 30) check = false;
+            }
+        }
+
         //private void checkDevice()
         //{
         //    new Task(() =>
@@ -193,7 +220,7 @@ namespace WPF_Auto
         //            if (!isStart) return;
         //            Delay(2);
         //            var listDevice = KAutoHelper.ADBHelper.GetDevices();
-        //            List<Charater> _chars = chars.FindAll(c => c.isChecked && c.status == "playing");
+        //            List<Charater> _chars = chars.FindAll(c => c.isChecked && c.status == "Running");
         //            var drivers = listDevice.FindAll(d => chars.Find(c => c.deviceId == d) == null);
         //        }
         //    }).Start();
@@ -208,10 +235,10 @@ namespace WPF_Auto
                 Delay(60);
                 ldplayer.KillApp("name", item.deviceName, "com.kv1.mobi");
                 //if (!isStart) return;
-                //Charater _char = chars.Find(c => c.isChecked && c.status == "waiting");
+                //Charater _char = chars.Find(c => c.isChecked && c.status == "Wait");
                 //if (_char != null)
                 //{
-                //    _char.status = "playing";
+                //    _char.status = "Running";
                 //    _char.deviceId = item.deviceId;
                 //    _char.deviceName = item.deviceName;
                 //}
